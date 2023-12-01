@@ -44,6 +44,8 @@
   "type": "module",
   "dependencies": {
     "@floating-ui/dom": "1.5.3",
+    "firebase": "^10.7.0",
+    "sveltefire": "^0.4.2",
     "whiskerword-shared": "workspace:^"
   }
 }
