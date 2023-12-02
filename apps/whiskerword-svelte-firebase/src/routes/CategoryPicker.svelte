@@ -1,35 +1,41 @@
 <script lang="ts">
 	import { Collection } from 'sveltefire';
-	import { setCategory, category, type } from './store';
+	import { setCategory, categoryStore, typeStore } from './store';
 	import TypePicker from './TypePicker.svelte';
 	import TopicPicker from './TopicPicker.svelte';
+	import { AppRail, AppRailTile } from '@skeletonlabs/skeleton';
 
-	$: selectedCategory = $category?.name || '';
+	$: selectedCategory = $categoryStore?.name || '';
 </script>
 
-<section class="flex gap-8">
+<section class="flex">
 	<Collection ref="categories" let:data={categories}>
-		<div class="flex flex-col gap-1">
+		<AppRail>
 			{#each categories as category}
-				<button
-					class={`btn ${category?.name === selectedCategory ? 'bg-purple-900' : 'bg-purple-500'}`}
-					on:click={() => setCategory(category)}>{category.name}</button
+				<AppRailTile
+					bind:group={selectedCategory}
+					name={category?.name}
+					value={category?.name}
+					title={category?.name}
+					on:click={() => setCategory(category)}
 				>
+					<span class="capitalize">{category.name}</span>
+				</AppRailTile>
 			{/each}
-		</div>
+		</AppRail>
 	</Collection>
 
-	{#if $category}
+	{#if $categoryStore}
 		<div>
-			{#key $category.id}
-				<TypePicker categoryRef={$category.ref.path} />
+			{#key $categoryStore.id}
+				<TypePicker categoryRef={$categoryStore.ref.path} />
 			{/key}
 		</div>
 	{/if}
-	{#if $type}
+	{#if $typeStore}
 		<div>
-			{#key $type.id}
-				<TopicPicker typeRef={$type.ref.path} />
+			{#key $typeStore.id}
+				<TopicPicker typeRef={$typeStore.ref.path} />
 			{/key}
 		</div>
 	{/if}

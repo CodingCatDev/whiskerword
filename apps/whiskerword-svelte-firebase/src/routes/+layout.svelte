@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.postcss';
 	import { AppShell, AppBar } from '@skeletonlabs/skeleton';
+	import { page } from '$app/stores';
 
 	// Floating UI for Popups
 	import { computePosition, autoUpdate, flip, shift, offset, arrow } from '@floating-ui/dom';
@@ -9,7 +10,7 @@
 
 	// Firebase
 	import { PUBLIC_EMULATOR } from '$env/static/public';
-	import { FirebaseApp } from 'sveltefire';
+	import { FirebaseApp, docStore } from 'sveltefire';
 	import { initializeApp } from 'firebase/app';
 	import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 	import { getAuth, connectAuthEmulator } from 'firebase/auth';
@@ -37,15 +38,38 @@
 	}
 
 	// Nav
-	import { topic, category, type } from './store';
+	import { topicStore, categoryStore, typeStore } from './store';
 	import type { Unsubscriber } from 'svelte/store';
 	let unsubTopic: Unsubscriber;
 	onMount(() => {
-		unsubTopic = topic.subscribe((t) => {
-			if (t?.id) {
-				window.location.href = `/game/${$category?.id},${$type?.id},${$topic?.id}`;
-			}
-		});
+		// If we are in the game set the correct category state
+		if ($page.url.pathname.startsWith('/game')) {
+			const paths = $page.url.pathname.replace('/game/', '').split(',');
+			const categoryRef = docStore(firestore, `categories/${paths.at(0)}`);
+			categoryRef.subscribe((category) => {
+				categoryStore.set({
+					...category,
+					ref: categoryRef
+				});
+			});
+			const typeRef = docStore(firestore, `categories/${paths.at(0)}/types/${paths.at(1)}`);
+			typeRef.subscribe((type) => {
+				typeStore.set({
+					...type,
+					ref: categoryRef
+				});
+			});
+			const topicRef = docStore(
+				firestore,
+				`categories/${paths.at(0)}/types/${paths.at(1)}/topics/${paths.at(2)}`
+			);
+			topicRef.subscribe((topic) => {
+				topicStore.set({
+					...topic,
+					ref: categoryRef
+				});
+			});
+		}
 	});
 	onDestroy(() => {
 		if (unsubTopic) {
@@ -63,25 +87,19 @@
 			<!-- App Bar -->
 			<AppBar>
 				<svelte:fragment slot="lead">
-					<strong class="text-xl uppercase">Skeleton</strong>
+					<div class="flex flex-col">
+						<a href="/">
+							<strong class="text-xl">WiskerWord</strong>
+						</a>
+						<span>{new Date().toLocaleDateString()}</span>
+					</div>
 				</svelte:fragment>
+				<div class="flex flex-col">
+					<div class="flex capitalize">Category: {$categoryStore?.name || ''}</div>
+					<div class="flex capitalize">Type: {$typeStore?.name || ''}</div>
+					<div class="flex capitalize">Topic: {$topicStore?.name || ''}</div>
+				</div>
 				<svelte:fragment slot="trail">
-					<a
-						class="btn btn-sm variant-ghost-surface"
-						href="https://discord.gg/EXqV7W8MtY"
-						target="_blank"
-						rel="noreferrer"
-					>
-						Discord
-					</a>
-					<a
-						class="btn btn-sm variant-ghost-surface"
-						href="https://twitter.com/SkeletonUI"
-						target="_blank"
-						rel="noreferrer"
-					>
-						Twitter
-					</a>
 					<a
 						class="btn btn-sm variant-ghost-surface"
 						href="https://github.com/skeletonlabs/skeleton"
@@ -93,9 +111,12 @@
 				</svelte:fragment>
 			</AppBar>
 		</svelte:fragment>
-		<div class="container h-full">
-			<div class="">
+		<div class="w-full h-full flex">
+			<aside class="flex-none overflow-x-hidden overflow-y-auto bg-surface-50-900-token lg:w-auto">
 				<CategoryPicker />
+			</aside>
+
+			<div id="page" class="flex-1 flex justify-center">
 				<!-- Page Route Content -->
 				<slot />
 			</div>

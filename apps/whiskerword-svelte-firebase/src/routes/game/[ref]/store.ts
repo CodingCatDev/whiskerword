@@ -5,4 +5,4 @@ export interface Letter {
 	letter: string;
 	selected: boolean;
 }
-export const letters = writable<Letter[] | undefined>();
+export const lettersStore = writable<Letter[] | undefined>();

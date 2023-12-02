@@ -1,17 +1,29 @@
 <script lang="ts">
 	import { Collection } from 'sveltefire';
-	import { setTopic, topic } from './store';
+	import { categoryStore, setTopic, topicStore, typeStore } from './store';
+	import { AppRail, AppRailTile } from '@skeletonlabs/skeleton';
+
+	const startGame = () => {
+		window.location.href = `/game/${$categoryStore?.id},${$typeStore?.id},${$topicStore?.id}`;
+	};
 
 	export let typeRef = '';
 	$: ref = `${typeRef}/topics`;
-	$: selectedTopic = $topic?.name || '';
+	$: selectedTopic = $topicStore?.name || '';
 </script>
 
 <Collection {ref} let:data={topics}>
-	{#each topics as topic}
-		<button
-			class={`btn ${topic?.name === selectedTopic ? 'bg-green-900' : 'bg-green-500'}`}
-			on:click={() => setTopic(topic)}>{topic.name}</button
-		>
-	{/each}
+	<AppRail>
+		{#each topics as topic}
+			<AppRailTile
+				bind:group={selectedTopic}
+				name={topic?.name}
+				value={topic?.name}
+				title={topic?.name}
+				on:click={() => setTopic(topic)}
+			>
+				<span class="capitalize" on:click={() => startGame()}>{topic.name}</span>
+			</AppRailTile>
+		{/each}
+	</AppRail>
 </Collection>
