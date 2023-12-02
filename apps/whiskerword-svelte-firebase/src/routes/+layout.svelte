@@ -7,11 +7,15 @@
 	import { storePopup } from '@skeletonlabs/skeleton';
 	storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
 
+	// Firebase
+	import { PUBLIC_EMULATOR } from '$env/static/public';
 	import { FirebaseApp } from 'sveltefire';
 	import { initializeApp } from 'firebase/app';
-	import { getFirestore } from 'firebase/firestore';
-	import { getAuth } from 'firebase/auth';
-	import { getStorage } from 'firebase/storage';
+	import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+	import { getAuth, connectAuthEmulator } from 'firebase/auth';
+	import { connectStorageEmulator, getStorage } from 'firebase/storage';
+	import CategoryPicker from './CategoryPicker.svelte';
+	import { onDestroy, onMount } from 'svelte';
 
 	// Initialize Firebase
 	const app = initializeApp({
@@ -23,9 +27,31 @@
 		appId: '1:801717146769:web:cf68e38b9eece755305b30',
 		measurementId: 'G-MRREFE81N0'
 	});
-	const firestore = getFirestore(app);
 	const auth = getAuth(app);
+	const firestore = getFirestore(app);
 	const storage = getStorage(app);
+	if (PUBLIC_EMULATOR) {
+		connectAuthEmulator(auth, 'http://localhost:9099/auth');
+		connectFirestoreEmulator(firestore, 'localhost', 8080);
+		connectStorageEmulator(storage, 'localhost', 9199);
+	}
+
+	// Nav
+	import { topic, category, type } from './store';
+	import type { Unsubscriber } from 'svelte/store';
+	let unsubTopic: Unsubscriber;
+	onMount(() => {
+		unsubTopic = topic.subscribe((t) => {
+			if (t?.id) {
+				window.location.href = `/game/${$category?.id},${$type?.id},${$topic?.id}`;
+			}
+		});
+	});
+	onDestroy(() => {
+		if (unsubTopic) {
+			unsubTopic();
+		}
+	});
 </script>
 
 <!-- Firebase App -->
@@ -67,7 +93,12 @@
 				</svelte:fragment>
 			</AppBar>
 		</svelte:fragment>
-		<!-- Page Route Content -->
-		<slot />
+		<div class="container h-full">
+			<div class="">
+				<CategoryPicker />
+				<!-- Page Route Content -->
+				<slot />
+			</div>
+		</div>
 	</AppShell>
 </FirebaseApp>
